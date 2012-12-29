@@ -1,0 +1,111 @@
+= Robostripper
+
+Robostripper takes the magic of Nokogiri and makes it easy to treat a website like a database.
+
+== Installation
+
+Add this line to your application's Gemfile:
+
+   gem 'robostripper'
+
+And then execute:
+
+   $ bundle
+
+Or install it yourself as:
+
+   $ gem install robostripper
+
+== Usage
+
+Let's say you want to pull down information about a business from the Yellow Pages website.
+
+=== Single Item
+
+For the first example, let's pretend you want a single business' information and you already have the URL.
+
+First, create a class and then describe one of the items on the page that you want to pull out (in this case, the business details):
+
+  class YellowPage < Robostripper::Resource
+  end
+
+  YellowPage.add_item :details do
+    phone "p.phone strong"
+    street "span.street-address"
+    city "span.locality"
+    state "span.region"
+    zip "span.postal-code"
+    address { [ street, city, state, zip ].join(" ") }
+    payments { scan("dd.def-payment").split(", ").map(&:strip) }
+  end
+
+In the add_item block, I've described the attributes that I want to pull out and the query necessary to pull that information out.  For each attribute, you can give either CSS selector code or XPath or a mix of the two (as an array).  Alternatively, you can provide a block that will be executed each time you ask for the attribute.  For instance, in the example above, the *address* attribute references all of the other address attributes ad joins them together.
+
+The arguments to attributes are used in a call to the method _scan_, which is used explicitly in the *payments* attribute.  See the section below for more details about document scanning.  The payments on the page I'll be pulling from are comma separated - but I want to produce an array - so I split by commas and strip the results.
+
+It is then trivial to pull information from the page:
+
+  url = "http://www.yellowpages.com/silver-spring-md/mip/quarry-house-tavern-3342829"
+  yp = YellowPage.new(url)
+  yp.details.payments
+    => ["MASTER CARD", "DISCOVER", "AMEX", "VISA", "CASH ONLY"]
+  yp.details.phone
+    => "(301) 587-8350"
+  yp.details.address
+    => "8401 Georgia Ave, Silver Spring MD 20910"
+
+
+=== Pages with Lists
+
+For the second example, let's say you want to be able to search the Yellow Pages website and then get the details for each matching business.
+
+First, let's define our listing class.
+
+  class YellowPagesList < Robostripper::Resource
+    def initialize(city, name)
+      # First, replace spaces with dashes
+      city = city.gsub(',', '').gsub(' ', '-')
+      name = name.gsub(' ', '-')
+      super("http://www.yellowpages.com/#{city}/#{name}")
+    end
+  end
+
+Because the Yellow Pages site performs searches based on URL structure, we've simply crafted the structure based on an input city and business name.  Now, we can explain how to get each result out of the page:
+
+  YellowPagesList.add_list :businesses, "div.result" do
+    name "h3.business-name a"
+    url "h3.business-name a", :attribute => 'href'
+    details { YellowPage.new(url).details }
+  end
+
+For this example, each business' information can be foudn within a _div.result_.  Each of those will have three attributes.  The first two are pulled out of the div in the same way as the single result described above.  The details attribute, however, is special in that it creates a new *YellowPage* (which we defined above).  When you ask for a business' details, then Robostripper will go get the URL and parse out the details.
+
+Putting it all together:
+
+  ypl = YellowPagesList.new("Washington, DC", "Quarry House Tavern")
+  # the first match is all we care about
+  business = ypl.businesses.first
+  # now, get the details like we did above
+  business.details.phone
+   => "(301) 587-8350"
+  business.details.zip
+   => "20910"
+
+We can now search the Yellow Pages website and get the details for any business.  Like a Robot.
+
+== Scanning Documents
+
+If a block isn't given to an attribute definition in _add_list_ or _add_item_ then the arguments are passed along to the method _scan_.  The method _scan_ takes two arguments:
+
+1. A CSS path selector, an XPath selector, or an array containing a any mix of the two.  If the argument is an array, then each selection is applied in order.  For instance:
+
+     [ "p.something", "a[first()]" ]
+
+   will first find paragraphs with a class of _something_ using a CSS selctor, and then will pull out the first _a_ element using the XPath selector.
+
+2. The second argument is an options hash.  By default, _scan_ will just return the _text_ content of all matching nodes from #1.  The following options can modify that:
+   * *:all* => true: This signifies that _scan_ should just return all matching elements, without sucking out the text.
+   * *:nontext* => ' ': If this option is specified, it will replace all non-text elements with a spacing string.  This is necessary, for instance, if a website uses 
+     <br /> elements to separate strings and you want to preserve the separation.  For instance, if you want "123 Fake St<br />A City, CA" to have a space between the
+     street and the city.
+   * *:attribute* => 'href': Use this to pull out an element's specific attribute rather than it's inner text.
