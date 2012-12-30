@@ -48,10 +48,10 @@ module Robostripper
         result = result.search(path)
       }      
 
-      if result.nil? or result.length == 0
-        nil
-      elsif options.fetch(:all, false)
+      if options.fetch(:all, false)
         result
+      elsif result.nil? or result.length == 0
+        nil
       elsif options.has_key? :nontext
         result.children.select(&:text?).map(&:text).join(options[:nontext])
       elsif options.has_key? :attribute
