@@ -1,6 +1,6 @@
 = Robostripper
 
-Robostripper takes the magic of Nokogiri and makes it easy to treat a website like a database.
+Robostripper takes the magic of Nokogiri and makes it easy to treat a website as though it actually provided a REST interface.
 
 == Installation
 
@@ -109,3 +109,4 @@ If a block isn't given to an attribute definition in _add_list_ or _add_item_ th
      <br /> elements to separate strings and you want to preserve the separation.  For instance, if you want "123 Fake St<br />A City, CA" to have a space between the
      street and the city.
    * *:attribute* => 'href': Use this to pull out an element's specific attribute rather than it's inner text.
+   * *:strip* => true: By default, text results are stripped of preceeding whitespace/newlines.  You can disable this by setting *:strip* to false.  This option is ignored if     *:all* is _true_.

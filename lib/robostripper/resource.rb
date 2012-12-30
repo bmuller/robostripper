@@ -53,11 +53,12 @@ module Robostripper
       elsif result.nil? or result.length == 0
         nil
       elsif options.has_key? :nontext
-        result.children.select(&:text?).map(&:text).join(options[:nontext])
+        result = result.children.select(&:text?).map(&:text).join(options[:nontext])
+        options.fetch(:strip, true) ? result.strip : result
       elsif options.has_key? :attribute
         result.first[options[:attribute]]
       else
-        result.text
+        options.fetch(:strip, true) ? result.text.strip : result.text
       end
     end
 
