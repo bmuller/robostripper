@@ -19,4 +19,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency("nokogiri", ">= 1.5.6")
   gem.add_development_dependency("rake")
   gem.add_development_dependency("rdoc")
+  gem.add_development_dependency("minitest")
 end

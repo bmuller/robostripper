@@ -7,3 +7,9 @@ RDoc::Task.new("doc") { |rdoc|
   rdoc.rdoc_files.include('README.rdoc')
   rdoc.rdoc_files.include('lib/**/*.rb')
 }
+
+task :test do
+  puts `ruby test/robostripper_test.rb`
+end
+
+task :default => 'test'
