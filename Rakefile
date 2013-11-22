@@ -8,8 +8,11 @@ RDoc::Task.new("doc") { |rdoc|
   rdoc.rdoc_files.include('lib/**/*.rb')
 }
 
-task :test do
-  puts `ruby test/robostripper_test.rb`
+require 'rake/testtask'
+
+Rake::TestTask.new do |t|
+  t.test_files = FileList['test/*_test.rb']
+  t.verbose = true
 end
 
-task :default => 'test'
+task :default => :test

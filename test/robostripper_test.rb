@@ -1,7 +1,4 @@
-require 'rubygems'
 require 'minitest/autorun'
-
-$:.unshift File.expand_path("../../lib", __FILE__)
 require 'robostripper'
 
 class YellowPage < Robostripper::Resource
@@ -16,7 +13,7 @@ YellowPage.add_item :details do
   payments { scan(".payment").split(",").map(&:strip) }
 end
 
-class Robostripper::Test < MiniTest::Unit::TestCase
+class RobostripperTest < MiniTest::Test
   def test_http_headers
     headers_hash = Robostripper::HTTP::HEADERS
     assert_equal %w(Accept Accept-Charset Accept-Language User-Agent), headers_hash.keys
